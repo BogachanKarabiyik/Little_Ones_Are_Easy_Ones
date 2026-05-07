@@ -32,12 +32,13 @@ struct Dog
 	uint8_t state = walkingRight;
 	std::string name;
 	std::string hp = "***";
+	bool bought = false;
 };
 
 struct DogPipeline
 {
 	GLuint program;
-	GLuint perspectiveLocation, modelLocation, dogFrameLocation;
+	GLuint perspectiveLocation, modelLocation, dogFrameLocation, levelLoc;
 	
 	glm::mat4 model;
 
@@ -61,6 +62,7 @@ struct DogPipeline
 		modelLocation = glGetUniformLocation(program, "model");
 		dogFrameLocation = glGetUniformLocation(program, "dogFrame");
 		perspectiveLocation = glGetUniformLocation(program, "perspective");
+		levelLoc = glGetUniformLocation(program, "level");
 		glUniformMatrix4fv(perspectiveLocation, 1, GL_FALSE, glm::value_ptr(perspective));
 
 		for (int i = 0; i < dogCount; i++)
@@ -72,6 +74,7 @@ struct DogPipeline
 
 			glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 			glUniform1i(dogFrameLocation, allDogs[i].dogFrame);
+			glUniform1i(levelLoc, level);
 
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
@@ -83,7 +86,7 @@ struct DogPipeline
 		{
 			for (int a = 0; a < 16; a++)
 			{
-				if (roll1 > -640 + (80 * a) && roll1 < -560 + (80 * a) && roll2 < 360 - (40 * b) && roll2 > 320 - (40 * b))
+				if (roll1 >= -640 + (80 * a) && roll1 <= -560 + (80 * a) && roll2 <= 360 - (40 * b) && roll2 >= 320 - (40 * b))
 				{
 					return (b * 16) + a;
 				}
@@ -101,7 +104,11 @@ struct DogPipeline
 
 		return out;
 	}
+	int owned = 0;
+	bool pls = false;
 
+	int o1 = 65;
+	int o2 = 85;
 	void updateRoll(StaticPipeline& s)
 	{
 		for (int i = 0; i < dogCount; i++)
@@ -112,12 +119,100 @@ struct DogPipeline
 				continue;
 			}
 
+			for (int i = 0; i < 5; i++)
+			{
+				if (allDogs[i].bought)
+					owned++;
+			}
+
+			int c = 0;
+
+			if (owned > 1)
+				c = roll(1, 1);
+
+			if (c == 1)
+			{
+				int prev = 0;
+				pls = true;
+				for (int i = 0; i < 5; i++)
+				{
+					if (allDogs[i].bought)
+					{
+						allDogs[i].desiredPosition = allDogs[prev].position;
+						prev = i;
+						int r = roll(0, 5);
+						if (r == 0)
+							ses0.play();
+						else if (r == 1)
+							ses1.play();
+						else if (r == 2)
+							ses2.play();
+						else if (r == 3)
+							ses3.play();
+						else if (r == 4)
+							ses4.play();
+						else
+							ses5.play();
+					}
+				}
+			}
+
+			if (pls)
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					if (allDogs[i].bought == true)
+					{
+						o1 = i;
+						break;
+					}
+				}
+
+				for (int i = o1 + 1; i < 5; i++)
+				{
+					if (allDogs[i].bought == true)
+					{
+						o2 = i;
+						break;
+					}
+				}
+
+				if (allDogs[o1].position.x < allDogs[o2].position.x)
+				{
+					allDogs[o1].desiredPosition.x = allDogs[o2].position.x - 75;
+					allDogs[o2].desiredPosition.x = allDogs[o1].position.x + 75;
+				}
+				else
+				{
+					allDogs[o1].desiredPosition.x = allDogs[o2].position.x + 75;
+					allDogs[o2].desiredPosition.x = allDogs[o1].position.x - 75;
+				}
+
+				allDogs[o1].desiredPosition.y = allDogs[o2].position.y;
+				allDogs[o2].desiredPosition.y = allDogs[o1].position.y;
+
+				int r = roll(0, 5);
+				if (r == 0)
+					ses0.play();
+				else if (r == 1)
+					ses1.play();
+				else if (r == 2)
+					ses2.play();
+				else if (r == 3)
+					ses3.play();
+				else if (r == 4)
+					ses4.play();
+				else
+					ses5.play();
+			}
+
 			do
 			{
 				allDogs[i].desiredPosition.x = roll(-639, 639);
 				allDogs[i].desiredPosition.y = roll(-359, 359);
 			} while (s.level[0].block[findBlockNo(allDogs[i].desiredPosition.x, allDogs[i].desiredPosition.y)] == '#');
 		}
+		owned = 0;
 	}
 
 	void update(StaticPipeline& s)
@@ -199,7 +294,13 @@ struct DogPipeline
 					allDogs[i].dogFrame = 1;
 			}
 			*/
-
+			for (int j = 0; j < dogCount; j++)
+			{
+				if (allDogs[i].position == allDogs[j].position && i != j)
+				{
+					return;
+				}
+			}
 			if (allDogs[i].position != allDogs[i].desiredPosition)
 			{
 				glm::vec2 difference = allDogs[i].desiredPosition - allDogs[i].position;

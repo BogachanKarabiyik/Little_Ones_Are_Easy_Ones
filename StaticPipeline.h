@@ -4,7 +4,7 @@
 
 struct Level
 {
-	GLuint block[289];
+    GLuint block[289];
 };
 
 struct StaticPipeline
@@ -38,21 +38,76 @@ struct StaticPipeline
 		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 288);
 	}
 
-	void readTxt(uint8_t levelNo)
-	{
-		std::string line;
-		std::ifstream MyReadFile("Saves/one.txt");
+	std::vector<std::string> splitByComma(const std::string& str) {
+		std::vector<std::string> tokens;
+		std::stringstream ss(str);
+		std::string token;
 
-		uint8_t lineCounter = 0;
-		while (std::getline(MyReadFile, line))
-		{
-			for (int i = 0; i < 16; i++)
-			{
-				level[levelNo].block[i + (16 * lineCounter)] = line[i];
-			}
-			lineCounter++;
+		while (std::getline(ss, token, '.')) {
+			tokens.push_back(token);
 		}
 
-		MyReadFile.close();
+		return tokens;
 	}
+
+    bool modifyLineInFile(const std::string& filename, int targetLine, const std::string& newText) {
+        std::ifstream inputFile(filename);
+        if (!inputFile.is_open()) {
+            std::cerr << "Error: Could not open file '" << filename << "' for reading.\n";
+            return false;
+        }
+
+        // Create a temporary file
+        std::string tempFilename = filename + ".tmp";
+        std::ofstream tempFile(tempFilename);
+        if (!tempFile.is_open()) {
+            std::cerr << "Error: Could not create temporary file.\n";
+            inputFile.close();
+            return false;
+        }
+
+        std::string currentLine;
+        int currentLineNumber = 1;
+        bool lineReplaced = false;
+
+        // Read from the original file and write to the temp file
+        while (std::getline(inputFile, currentLine)) {
+            if (currentLineNumber == targetLine) {
+                tempFile << newText << "\n";
+                lineReplaced = true;
+            }
+            else {
+                tempFile << currentLine << "\n";
+            }
+            currentLineNumber++;
+        }
+
+        // Close both files to release locks before deleting/renaming
+        inputFile.clear();
+        tempFile.clear();
+        inputFile.close();
+        tempFile.close();
+
+        // If the line was never reached, clean up the temp file and return
+        if (!lineReplaced) {
+            std::cerr << "Error: Line " << targetLine << " is out of bounds.\n";
+            std::remove(tempFilename.c_str());
+            return false;
+        }
+
+        // Delete the original file
+        if (std::remove(filename.c_str()) != 0) {
+            std::cerr << "Error: Could not delete the original file.\n";
+            perror("Reason");
+            return false;
+        }
+
+        // Rename the temp file to the original file's name
+        if (std::rename(tempFilename.c_str(), filename.c_str()) != 0) {
+            std::cerr << "Error: Could not rename the temporary file.\n";
+            return false;
+        }
+
+        return true;
+    }
 };

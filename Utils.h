@@ -1,12 +1,7 @@
 #pragma once
 #include "Includes.h"
 
-TextPipeline textPipeline;
-DogPipeline dogPipeline;
-StaticPipeline staticPipeline;
-MenuPipeline menuPipeline;
 double mouseX = -10000, mouseY = 0;
-int mouseXWorld = 0, mouseYWorld = 0;
 int moneys = 1400;
 
 int roll(int start, int end)
@@ -155,9 +150,16 @@ void init()
 	staticPipeline.program = makeShaderProgram(staticVertex, staticFragment);
 	menuPipeline.program = makeShaderProgram(menuVertex, menuFragment);
 	menuPipeline.breadProgram = makeShaderProgram(breadVertex, breadFragment);
+	singlePipeline.program = makeShaderProgram(breadVertex, breadFragment);
 	setupVertices();
 
 	textPipeline.texture = loadTexture("Textures/Atlas.png");
+	singlePipeline.texture[0] = loadTexture("Textures/Ball.png");
+	singlePipeline.texture[1] = loadTexture("Textures/Car.png");
+	singlePipeline.texture[2] = loadTexture("Textures/Isometric2.png");
+	singlePipeline.texture[3] = loadTexture("Textures/Isometric1.png");
+
+	singlePipeline.texture[4] = loadTexture("Textures/Rope.png");
 
 	dogPipeline.texture[0] = loadTexture("Textures/Collie.png");
 	dogPipeline.texture[1] = loadTexture("Textures/Corgi.png");
@@ -170,8 +172,12 @@ void init()
 	menuPipeline.bread = loadTexture("Textures/Bread.png");
 }
 
+int windowWidth = 0, windowHeight = 0;
+
 void windowReshapeCallback(GLFWwindow* window, int width, int height)
 {
+	windowWidth = width;
+	windowHeight = height;
 	glfwGetWindowSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	perspective = glm::ortho(0.0f, (float)width, 0.0f, (float)height, 0.1f, 100.0f);
@@ -189,5 +195,4 @@ void windowReshapeCallback(GLFWwindow* window, int width, int height)
 	{
 		perspective = glm::ortho(-targetWidth / 2.0f, targetWidth / 2.0f, -A / V * targetHeight / 2.0f, A / V * targetHeight / 2.0f);
 	}
-
 }

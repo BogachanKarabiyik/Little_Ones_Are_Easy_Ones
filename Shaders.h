@@ -85,6 +85,7 @@ std::string dogFragment = R"(
 
 	in vec2 texturePosition;
 	uniform int dogFrame;
+	uniform int level;
 
 	layout (binding=0) uniform sampler2D fragmentTexture;
 
@@ -92,6 +93,10 @@ std::string dogFragment = R"(
 	{
 		vec4 textureColor = texture(fragmentTexture, vec2((texturePosition.x / 23) + 0.043478 * dogFrame, texturePosition.y));
 		outColor = textureColor;
+		if (level == 2)
+		{
+			outColor.w = 0.5;
+		}
 	}
 )";
 
@@ -181,10 +186,27 @@ std::string staticFragment = R"(
 	{
 		vec4 textureColor;
 
-		if (level[287 - offset] == 35)		
-			textureColor = texture(fragmentTexture, vec2((texturePosition.x / 70) + 0.043478 * 0, texturePosition.y));
-		else
-			textureColor = texture(fragmentTexture, vec2((texturePosition.x / 70) + 0.043478 * 1, texturePosition.y));
+		for (int i = 0; i < 70; i++)
+		{
+			if (level[287 - offset] == 35 + i)
+			{
+				textureColor = texture(fragmentTexture, vec2((texturePosition.x / 70) + 0.014285 * i, texturePosition.y));
+				break;
+			}
+		}
+
+		if (level[287 - offset] == 0)
+		{
+			textureColor = vec4(0.584597, 0.627755, 0.513975, 0);
+		}
+		else if (level[287 - offset] == 1)
+		{
+			textureColor = vec4(0.61, 0.4, 0.33, 0);
+		}
+		else if (level[287 - offset] == 2)
+		{
+			textureColor = vec4(0, 0, 0, 0);
+		}
 
 		outColor = textureColor;
 	}
